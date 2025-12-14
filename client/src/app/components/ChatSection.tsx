@@ -182,7 +182,7 @@ const ChatWindow = () => {
           <div className="h-full flex items-center justify-center text-sm text-slate-500">
             Ask a question like{" "}
             <span className="ml-1 italic text-slate-300">
-              "Give me a summary of this PDF"
+              {"Give me a summary of this PDF"}
             </span>
           </div>
         )}
