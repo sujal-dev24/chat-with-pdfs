@@ -76,6 +76,12 @@ An AI-powered application that allows users to upload PDF documents and engage i
    REDIS_HOST=localhost
    REDIS_PORT=6379
    ```
+   
+   Create `.env` file in the `client/` directory:
+   ```env
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_public_clerk_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   ```
 
 2. **Get API Keys**
    - **Groq API Key**: Sign up at [groq.com](https://groq.com) and get your API key
