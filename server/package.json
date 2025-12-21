@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "echo \"No build step required for Node backend\"",
     "dev": "nodemon index.js",
     "dev:worker": "nodemon worker.js",
     "start": "node index.js",
