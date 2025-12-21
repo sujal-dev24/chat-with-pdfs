@@ -38,12 +38,7 @@ const queue = new Queue("file-upload-queue", {
 });
 
 // ---- CORS ----
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // ---- Multer (file upload) ----
