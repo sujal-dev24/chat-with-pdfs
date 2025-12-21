@@ -98,8 +98,7 @@ const worker = new Worker(
   {
     concurrency: 1,
     connection: {
-      host: REDIS_HOST,
-      port: REDIS_PORT,
+      url: process.env.REDIS_URL,
     },
   }
 );

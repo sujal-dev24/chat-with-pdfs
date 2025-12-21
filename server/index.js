@@ -33,8 +33,7 @@ const groqClient = new Groq({ apiKey: GROQ_API_KEY });
 // ---- Redis queue ----
 const queue = new Queue("file-upload-queue", {
   connection: {
-    host: REDIS_HOST,
-    port: REDIS_PORT,
+    url: process.env.REDIS_URL,
   },
 });
 
