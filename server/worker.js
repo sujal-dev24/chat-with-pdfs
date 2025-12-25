@@ -50,6 +50,8 @@ const worker = new Worker(
   "file-upload-queue",
   async (job) => {
     console.log("📄 New job received:", job.data);
+    
+    const data = job.data;
 
     // 1) Load PDF
     if (!data.pdfUrl) {
@@ -94,15 +96,13 @@ const worker = new Worker(
       return tempPath;
     }
 
-    const data = job.data;
-
     const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
 
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
 
     fs.unlinkSync(localPdfPath);
-    
+
     console.log("🔗 Cloudinary URL:", data.pdfUrl);
 
     console.log("Raw docs:", rawDocs.length);
