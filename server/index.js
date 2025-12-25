@@ -38,7 +38,13 @@ const queue = new Queue("file-upload-queue", {
 });
 
 // ---- CORS ----
-app.use(cors({ origin: "*" }));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+  })
+);
+
 app.use(express.json());
 
 // ---- Multer (file upload) ----
@@ -113,7 +119,9 @@ app.get("/chat", async (req, res) => {
   try {
     const userQuery = req.query.message;
     if (!userQuery || typeof userQuery !== "string") {
-      return res.status(400).json({ error: "Query parameter 'message' missing" });
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'message' missing" });
     }
 
     // Retriever with SAME embeddings as worker
