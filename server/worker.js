@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
 import fs from "fs";
 import os from "os";
-import fetch from "node-fetch";
+import axios from "axios";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -70,13 +70,14 @@ const worker = new Worker(
 
       console.log("🔐 Signed Cloudinary URL:", signedUrl);
 
-      const res = await fetch(signedUrl);
+      const res = await axios.get(signedUrl, { responseType: 'arraybuffer' });
 
-      if (!res.ok) {
-        throw new Error("Failed to download PDF from Cloudinary");
+      if (res.status !== 200) {
+        console.error(`Axios failed with status ${res.status}: ${res.statusText}`);
+        throw new Error(`Failed to download PDF from Cloudinary: ${res.status} ${res.statusText}`);
       }
 
-      const buffer = Buffer.from(await res.arrayBuffer());
+      const buffer = Buffer.from(res.data);
 
       const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
 
