@@ -33,7 +33,7 @@ const ChatWindow = () => {
 
     try {
       const res = await fetch(
-        `${API_URL}/chat?message=${encodeURIComponent(userMessage.content)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/chat?message=${encodeURIComponent(userMessage.content)}`
       );
 
       if (!res.ok) {
