@@ -114,6 +114,7 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
         resource_type: "raw", // 🔴 VERY IMPORTANT
         use_filename: true,
         unique_filename: true,
+        access_mode: "public", // Make the raw resource publicly accessible
       }
     );
 
@@ -122,7 +123,7 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
 
     // 📤 Send Cloudinary URL to worker
     await queue.add("file-upload", {
-      publicId: uploadResult.public_id, // 🔴 MUST USE secure_url
+      pdfUrl: uploadResult.secure_url,
       originalname: req.file.originalname,
     });
 

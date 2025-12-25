@@ -52,25 +52,16 @@ const worker = new Worker(
     console.log("📄 New job received:", job.data);
 
     const data = job.data;
-    
+
     // 1) Load PDF
-    if (!data.publicId) {
-      throw new Error("publicId missing in job data");
+    if (!data.pdfUrl) {
+      throw new Error("pdfUrl missing in job data");
     }
-    
-    console.log("🔗 Cloudinary publicId:", data.publicId);
 
-    async function downloadPdfFromCloudinary(publicId) {
-      // ✅ Generate signed URL
-      const signedUrl = cloudinary.v2.url(publicId, {
-        resource_type: "raw",
-        sign_url: true,
-        secure: true,
-      });
+    console.log("🔗 Cloudinary PDF URL:", data.pdfUrl);
 
-      console.log("🔐 Signed Cloudinary URL:", signedUrl);
-
-      const res = await axios.get(signedUrl, { responseType: 'arraybuffer' });
+    async function downloadPdfFromCloudinary(pdfUrl) {
+      const res = await axios.get(pdfUrl, { responseType: 'arraybuffer' });
 
       if (res.status !== 200) {
         console.error(`Axios failed with status ${res.status}: ${res.statusText}`);
@@ -88,7 +79,7 @@ const worker = new Worker(
       return localPath;
     }
 
-    const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
+    const localPdfPath = await downloadPdfFromCloudinary(data.pdfUrl);
 
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
