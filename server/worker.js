@@ -50,13 +50,15 @@ const worker = new Worker(
   "file-upload-queue",
   async (job) => {
     console.log("📄 New job received:", job.data);
-    
+
     const data = job.data;
 
     // 1) Load PDF
-    if (!data.pdfUrl) {
-      throw new Error("pdfUrl missing in job data");
+    if (!data.publicId) {
+      throw new Error("publicId missing in job data");
     }
+
+    console.log("🔗 Cloudinary publicId:", data.publicId);
 
     // ---- Download PDF from Cloudinary ----
     const response = await fetch(data.pdfUrl);
