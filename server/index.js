@@ -56,8 +56,6 @@ app.use(
   })
 );
 
-app.options("/*", cors());
-
 app.use(express.json());
 
 // ---- Multer (file upload) ----
