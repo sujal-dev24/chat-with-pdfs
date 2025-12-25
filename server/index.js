@@ -9,7 +9,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
 import fs from "fs";
-import path from "path";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 
