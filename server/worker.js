@@ -52,13 +52,14 @@ const worker = new Worker(
     console.log("📄 New job received:", job.data);
 
     const data = job.data;
-
+    
     // 1) Load PDF
     if (!data.publicId) {
       throw new Error("publicId missing in job data");
     }
-
+    
     console.log("🔗 Cloudinary publicId:", data.publicId);
+    console.log("🔗 Cloudinary URL:", data.pdfUrl);
 
     // ---- Download PDF from Cloudinary ----
     const response = await fetch(data.pdfUrl);
@@ -75,39 +76,39 @@ const worker = new Worker(
     fs.writeFileSync(tempPdfPath, buffer);
 
     async function downloadPdfFromCloudinary(publicId) {
-      const tempPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+      // ✅ Generate signed URL
+      const signedUrl = cloudinary.v2.url(publicId, {
+        resource_type: "raw",
+        sign_url: true,
+        secure: true,
+      });
 
-      const signedUrl = cloudinary.v2.utils.private_download_url(
-        publicId,
-        "pdf",
-        {
-          resource_type: "raw",
-          attachment: true,
-        }
-      );
+      console.log("🔐 Signed Cloudinary URL:", signedUrl);
 
-      const response = await fetch(signedUrl);
-      if (!response.ok) {
-        throw new Error("Cloudinary signed download failed");
+      const res = await fetch(signedUrl);
+
+      if (!res.ok) {
+        throw new Error("Failed to download PDF from Cloudinary");
       }
 
-      const buffer = Buffer.from(await response.arrayBuffer());
-      fs.writeFileSync(tempPath, buffer);
+      const buffer = Buffer.from(await res.arrayBuffer());
 
-      console.log("📥 PDF downloaded via signed URL:", tempPath);
-      return tempPath;
+      const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+
+      fs.writeFileSync(localPath, buffer);
+
+      console.log("📥 PDF downloaded at:", localPath);
+
+      return localPath;
     }
 
     const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
 
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
+    console.log("Raw docs:", rawDocs.length);
 
     fs.unlinkSync(localPdfPath);
-
-    console.log("🔗 Cloudinary URL:", data.pdfUrl);
-
-    console.log("Raw docs:", rawDocs.length);
 
     // 2) Split into chunks
     const splitter = new CharacterTextSplitter({
