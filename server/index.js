@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
 import fs from "fs";
 import cloudinary from "cloudinary";
+import axios from "axios";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 
@@ -105,31 +106,35 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // 🔹 Upload PDF to Cloudinary
-    const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
-      resource_type: "raw", // IMPORTANT for PDF
-      folder: "pdf-uploads",
-    });
+    // ⬆ Upload PDF to Cloudinary (RAW)
+    const uploadResult = await cloudinary.v2.uploader.upload(
+      req.file.path,
+      {
+        folder: "pdf-uploads",
+        resource_type: "raw", // 🔴 VERY IMPORTANT
+        use_filename: true,
+        unique_filename: true,
+      }
+    );
 
-    // 🔹 Remove local temp file
+    // ❌ Local file delete (important for Railway)
     fs.unlinkSync(req.file.path);
 
-    // 🔹 Send ONLY URL to worker
+    // 📤 Send Cloudinary URL to worker
     await queue.add("file-upload", {
-      pdfUrl: uploadResult.secure_url,
+      pdfUrl: uploadResult.secure_url, // 🔴 MUST USE secure_url
       originalname: req.file.originalname,
     });
 
     return res.json({
       status: "queued",
-      message: "PDF uploaded & sent for processing",
+      pdfUrl: uploadResult.secure_url,
     });
   } catch (err) {
     console.error("Upload error:", err);
-    return res.status(500).json({ error: "Failed to upload PDF" });
+    return res.status(500).json({ error: "Upload failed" });
   }
 });
-
 
 /**
  * GET /chat?message=...

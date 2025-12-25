@@ -7,6 +7,7 @@ import { pipeline } from "@xenova/transformers";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import axios from "axios";
 import fs from "fs";
 import os from "os";
 import fetch from "node-fetch";
@@ -64,14 +65,27 @@ const worker = new Worker(
 
     fs.writeFileSync(tempPdfPath, buffer);
 
-    // ---- Load PDF ----
-    const loader = new PDFLoader(tempPdfPath, { splitPages: true });
+    async function downloadPdf(url) {
+      const tempPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+
+      const response = await axios.get(url, {
+        responseType: "arraybuffer",
+        timeout: 20000,
+      });
+
+      fs.writeFileSync(tempPath, response.data);
+      return tempPath;
+    }
+
+    // ⬇ Download PDF from Cloudinary
+    const localPdfPath = await downloadPdf(data.pdfUrl);
+
+    // 📄 Load PDF
+    const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
 
-    console.log("Raw docs:", rawDocs.length);
-
-    // ---- Cleanup temp file ----
-    fs.unlinkSync(tempPdfPath);
+    // 🧹 Cleanup temp file
+    fs.unlinkSync(localPdfPath);
 
     console.log("Raw docs:", rawDocs.length);
 
