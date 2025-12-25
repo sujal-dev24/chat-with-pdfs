@@ -122,7 +122,7 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
 
     // 📤 Send Cloudinary URL to worker
     await queue.add("file-upload", {
-      pdfUrl: uploadResult.secure_url, // 🔴 MUST USE secure_url
+      publicId: uploadResult.public_id, // 🔴 MUST USE secure_url
       originalname: req.file.originalname,
     });
 

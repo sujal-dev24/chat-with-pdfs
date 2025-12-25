@@ -7,10 +7,16 @@ import { pipeline } from "@xenova/transformers";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import axios from "axios";
+import cloudinary from "cloudinary";
 import fs from "fs";
 import os from "os";
 import fetch from "node-fetch";
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,9 +51,6 @@ const worker = new Worker(
   async (job) => {
     console.log("📄 New job received:", job.data);
 
-    const data = job.data;
-    console.log("🔗 Cloudinary URL:", data.pdfUrl);
-
     // 1) Load PDF
     if (!data.pdfUrl) {
       throw new Error("pdfUrl missing in job data");
@@ -67,41 +70,40 @@ const worker = new Worker(
 
     fs.writeFileSync(tempPdfPath, buffer);
 
-    async function downloadPdf(url) {
+    async function downloadPdfFromCloudinary(publicId) {
       const tempPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
 
-      const response = await axios({
-        method: "GET",
-        url,
-        responseType: "arraybuffer",
-        timeout: 30000,
-        maxRedirects: 5,
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-          Accept: "*/*",
-        },
-        validateStatus: (status) => status >= 200 && status < 400,
-      });
+      const signedUrl = cloudinary.v2.utils.private_download_url(
+        publicId,
+        "pdf",
+        {
+          resource_type: "raw",
+          attachment: true,
+        }
+      );
 
-      if (!response.data || response.data.byteLength === 0) {
-        throw new Error("Downloaded PDF is empty");
+      const response = await fetch(signedUrl);
+      if (!response.ok) {
+        throw new Error("Cloudinary signed download failed");
       }
 
-      fs.writeFileSync(tempPath, response.data);
+      const buffer = Buffer.from(await response.arrayBuffer());
+      fs.writeFileSync(tempPath, buffer);
 
-      console.log("📥 PDF downloaded to:", tempPath);
+      console.log("📥 PDF downloaded via signed URL:", tempPath);
       return tempPath;
     }
 
-    // ⬇ Download PDF from Cloudinary
-    const localPdfPath = await downloadPdf(data.pdfUrl);
+    const data = job.data;
 
-    // 📄 Load PDF
+    const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
+
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
 
-    // 🧹 Cleanup temp file
     fs.unlinkSync(localPdfPath);
+    
+    console.log("🔗 Cloudinary URL:", data.pdfUrl);
 
     console.log("Raw docs:", rawDocs.length);
 
