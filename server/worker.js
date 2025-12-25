@@ -45,7 +45,8 @@ const worker = new Worker(
   async (job) => {
     console.log("📄 New job received:", job.data);
 
-    const data = typeof job.data === "string" ? JSON.parse(job.data) : job.data;
+    const data = job.data;
+    console.log("🔗 Cloudinary URL:", data.pdfUrl);
 
     // 1) Load PDF
     if (!data.pdfUrl) {
@@ -54,6 +55,7 @@ const worker = new Worker(
 
     // ---- Download PDF from Cloudinary ----
     const response = await fetch(data.pdfUrl);
+
     if (!response.ok) {
       throw new Error("Failed to download PDF from Cloudinary");
     }
@@ -68,12 +70,26 @@ const worker = new Worker(
     async function downloadPdf(url) {
       const tempPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
 
-      const response = await axios.get(url, {
+      const response = await axios({
+        method: "GET",
+        url,
         responseType: "arraybuffer",
-        timeout: 20000,
+        timeout: 30000,
+        maxRedirects: 5,
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          Accept: "*/*",
+        },
+        validateStatus: (status) => status >= 200 && status < 400,
       });
 
+      if (!response.data || response.data.byteLength === 0) {
+        throw new Error("Downloaded PDF is empty");
+      }
+
       fs.writeFileSync(tempPath, response.data);
+
+      console.log("📥 PDF downloaded to:", tempPath);
       return tempPath;
     }
 
