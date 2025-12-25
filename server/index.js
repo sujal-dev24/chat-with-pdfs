@@ -115,6 +115,7 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
         use_filename: true,
         unique_filename: true,
         access_mode: "public", // Make the raw resource publicly accessible
+        type: "upload",
       }
     );
 
