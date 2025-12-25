@@ -9,6 +9,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
 import fs from "fs";
+import cloudinary from "cloudinary";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 
@@ -16,6 +17,12 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
   console.log("📁 uploads folder created");
 }
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,29 +105,31 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    await queue.add(
-      "file-upload",
-      JSON.stringify({
-        fieldname: req.file.fieldname,
-        originalname: req.file.originalname,
-        encoding: req.file.encoding,
-        mimetype: req.file.mimetype,
-        destination: req.file.destination,
-        filename: req.file.filename,
-        path: req.file.path,
-        size: req.file.size,
-      })
-    );
+    // 🔹 Upload PDF to Cloudinary
+    const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
+      resource_type: "raw", // IMPORTANT for PDF
+      folder: "pdf-uploads",
+    });
+
+    // 🔹 Remove local temp file
+    fs.unlinkSync(req.file.path);
+
+    // 🔹 Send ONLY URL to worker
+    await queue.add("file-upload", {
+      pdfUrl: uploadResult.secure_url,
+      originalname: req.file.originalname,
+    });
 
     return res.json({
       status: "queued",
-      filename: req.file.originalname,
+      message: "PDF uploaded & sent for processing",
     });
   } catch (err) {
     console.error("Upload error:", err);
-    return res.status(500).json({ error: "Failed to queue file" });
+    return res.status(500).json({ error: "Failed to upload PDF" });
   }
 });
+
 
 /**
  * GET /chat?message=...

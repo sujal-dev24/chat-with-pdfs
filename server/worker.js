@@ -7,16 +7,16 @@ import { pipeline } from "@xenova/transformers";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
+import os from "os";
+import fetch from "node-fetch";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = Number(process.env.REDIS_PORT);
 const QDRANT_URL = process.env.QDRANT_URL;
-const QDRANT_COLLECTION =
-  process.env.QDRANT_COLLECTION;
+const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION;
 
 if (!QDRANT_URL) {
   throw new Error("QDRANT_URL is not set in .env");
@@ -26,7 +26,7 @@ let embedder = null;
 
 // ---- Embedding helper (same as in index.js) ----
 async function embedText(text) {
-   if (!text || !text.trim()) {
+  if (!text || !text.trim()) {
     return new Array(384).fill(0); // return zero-vector for safety
   }
   if (!embedder) {
@@ -44,11 +44,35 @@ const worker = new Worker(
   async (job) => {
     console.log("📄 New job received:", job.data);
 
-    const data = JSON.parse(job.data);
+    const data = typeof job.data === "string" ? JSON.parse(job.data) : job.data;
 
     // 1) Load PDF
-    const loader = new PDFLoader(data.path, { splitPages: true });
+    if (!data.pdfUrl) {
+      throw new Error("pdfUrl missing in job data");
+    }
+
+    // ---- Download PDF from Cloudinary ----
+    const response = await fetch(data.pdfUrl);
+    if (!response.ok) {
+      throw new Error("Failed to download PDF from Cloudinary");
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    // ---- Save to temp file ----
+    const tempPdfPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+
+    fs.writeFileSync(tempPdfPath, buffer);
+
+    // ---- Load PDF ----
+    const loader = new PDFLoader(tempPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
+
+    console.log("Raw docs:", rawDocs.length);
+
+    // ---- Cleanup temp file ----
+    fs.unlinkSync(tempPdfPath);
+
     console.log("Raw docs:", rawDocs.length);
 
     // 2) Split into chunks
