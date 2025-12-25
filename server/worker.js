@@ -59,21 +59,6 @@ const worker = new Worker(
     }
     
     console.log("🔗 Cloudinary publicId:", data.publicId);
-    console.log("🔗 Cloudinary URL:", data.pdfUrl);
-
-    // ---- Download PDF from Cloudinary ----
-    const response = await fetch(data.pdfUrl);
-
-    if (!response.ok) {
-      throw new Error("Failed to download PDF from Cloudinary");
-    }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-
-    // ---- Save to temp file ----
-    const tempPdfPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
-
-    fs.writeFileSync(tempPdfPath, buffer);
 
     async function downloadPdfFromCloudinary(publicId) {
       // ✅ Generate signed URL
