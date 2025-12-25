@@ -8,6 +8,15 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
+import fs from "fs";
+import path from "path";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("📁 uploads folder created");
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +30,6 @@ const port = 8000;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const QDRANT_URL = process.env.QDRANT_URL;
 const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION;
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = Number(process.env.REDIS_PORT);
 
 if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY missing in .env");
 if (!QDRANT_URL) throw new Error("QDRANT_URL missing in .env");
@@ -50,7 +57,7 @@ app.use(express.json());
 // ---- Multer (file upload) ----
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
