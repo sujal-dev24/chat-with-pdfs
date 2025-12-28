@@ -49,13 +49,17 @@ async function embedText(text) {
 const worker = new Worker(
   "file-upload-queue",
   async (job) => {
-    console.log("📄 New job received:", job.data);
+    console.log("JOB DATA:", job.data);
 
     function getSignedPdfUrl(publicId) {
-      return cloudinary.v2.utils.private_download_url(publicId, "pdf", {
-        resource_type: "raw",
-        expires_at: Math.floor(Date.now() / 1000) + 300, // 5 min expiry
-      });
+      return cloudinary.v2.utils.private_download_url(
+        publicId, 
+        undefined, 
+        {
+          resource_type: "raw",
+          expires_at: Math.floor(Date.now() / 1000) + 300, // 5 min expiry
+        }
+      );
     }
 
     async function downloadPdfFromCloudinary(publicId) {
@@ -77,15 +81,15 @@ const worker = new Worker(
       return localPath;
     }
 
-    const data = job.data;
+    const { publicId } = job.data;
 
-    if (!data.publicId) {
+    if (!publicId) {
       throw new Error("publicId missing in job data");
     }
 
-    console.log("🔗 Cloudinary publicId:", data.publicId);
+    console.log("🔗 Cloudinary publicId:", publicId);
 
-    const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
+    const localPdfPath = await downloadPdfFromCloudinary(publicId);
 
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();

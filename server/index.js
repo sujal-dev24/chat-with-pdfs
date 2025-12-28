@@ -113,7 +113,8 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
     fs.unlinkSync(req.file.path);
 
     await queue.add("file-upload", {
-      publicId: uploadResult.public_id,
+      publicId: uploadResult.public_id, // 🔥 ONLY THIS
+      resourceType: "raw",
       originalname: req.file.originalname,
     });
 
