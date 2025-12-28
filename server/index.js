@@ -110,6 +110,9 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
       unique_filename: true,
     });
 
+    console.log("uplaod result: ", uploadResult);
+    
+
     fs.unlinkSync(req.file.path);
 
     await queue.add("file-upload", {
