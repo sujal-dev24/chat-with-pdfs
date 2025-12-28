@@ -105,9 +105,10 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
 
     const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
       folder: "pdf-uploads",
-      resource_type: "raw",
+      resource_type: "auto",
       use_filename: true,
       unique_filename: true,
+      access_mode: "public"
     });
 
     console.log("uplaod result: ", uploadResult);
