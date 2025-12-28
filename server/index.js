@@ -111,13 +111,11 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
     });
 
     console.log("uplaod result: ", uploadResult);
-    
 
     fs.unlinkSync(req.file.path);
 
     await queue.add("file-upload", {
-      publicId: uploadResult.public_id, // 🔥 ONLY THIS
-      resourceType: "raw",
+      pdfUrl: uploadResult.secure_url, // ✅ USE THIS
       originalname: req.file.originalname,
     });
 
