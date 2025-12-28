@@ -103,35 +103,23 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // ⬆ Upload PDF to Cloudinary (RAW)
     const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
       folder: "pdf-uploads",
-      resource_type: "raw", // VERY IMPORTANT
+      resource_type: "raw",
       use_filename: true,
       unique_filename: true,
-      type: "upload",
     });
 
-    // 🧹 Remove local file (Railway disk is ephemeral)
     fs.unlinkSync(req.file.path);
 
-    // 🔐 Generate SIGNED URL (fixes 401 error)
-    const signedPdfUrl = cloudinary.v2.url(uploadResult.public_id, {
-      resource_type: "raw",
-      type: "upload",
-      sign_url: true,
-      expires_at: Math.floor(Date.now() / 1000) + 60 * 10, // 10 minutes
-    });
-
-    // 📤 Send job to worker
     await queue.add("file-upload", {
-      pdfUrl: signedPdfUrl,
+      publicId: uploadResult.public_id,
       originalname: req.file.originalname,
     });
 
     return res.json({
       status: "queued",
-      pdfUrl: signedPdfUrl,
+      publicId: uploadResult.public_id,
     });
   } catch (err) {
     console.error("Upload error:", err);

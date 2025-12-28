@@ -51,46 +51,29 @@ const worker = new Worker(
   async (job) => {
     console.log("📄 New job received:", job.data);
 
+    async function downloadPdfFromCloudinary(publicId) {
+      const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+
+      await cloudinary.v2.uploader.download(publicId, localPath, {
+        resource_type: "raw",
+      });
+
+      console.log("📥 PDF downloaded via Cloudinary SDK:", localPath);
+      return localPath;
+    }
+
     const data = job.data;
 
-    // 1) Load PDF
-    if (!data.pdfUrl) {
-      throw new Error("pdfUrl missing in job data");
+    if (!data.publicId) {
+      throw new Error("publicId missing in job data");
     }
 
-    console.log("🔗 Cloudinary PDF URL:", data.pdfUrl);
+    console.log("🔗 Cloudinary publicId:", data.publicId);
 
-    async function downloadPdfFromCloudinary(pdfUrl) {
-      try {
-        const res = await axios.get(pdfUrl, {
-          responseType: "arraybuffer",
-          timeout: 15000,
-        });
-
-        if (res.status !== 200 || !res.data) {
-          throw new Error(`Cloudinary download failed: ${res.status}`);
-        }
-
-        const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
-        fs.writeFileSync(localPath, Buffer.from(res.data));
-
-        console.log("📥 PDF downloaded:", localPath);
-        return localPath;
-      } catch (err) {
-        console.error(
-          "❌ Cloudinary download error:",
-          err.response?.status,
-          err.message
-        );
-        throw new Error("Failed to download PDF from Cloudinary");
-      }
-    }
-
-    const localPdfPath = await downloadPdfFromCloudinary(data.pdfUrl);
+    const localPdfPath = await downloadPdfFromCloudinary(data.publicId);
 
     const loader = new PDFLoader(localPdfPath, { splitPages: true });
     const rawDocs = await loader.load();
-    console.log("Raw docs:", rawDocs.length);
 
     fs.unlinkSync(localPdfPath);
 
