@@ -54,10 +54,7 @@ const queue = new Queue("file-upload-queue", {
 // ---- CORS ----
 app.use(
   cors({
-    origin: [
-      "https://chat-with-pdfs-self.vercel.app",
-      "http://localhost:3000"
-    ],
+    origin: ["https://chat-with-pdfs-self.vercel.app", "http://localhost:3000"],
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
@@ -107,24 +104,19 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
     }
 
     // ⬆ Upload PDF to Cloudinary (RAW)
-    const uploadResult = await cloudinary.v2.uploader.upload(
-      req.file.path,
-      {
-        folder: "pdf-uploads",
-        resource_type: "raw", // 🔴 VERY IMPORTANT
-        use_filename: true,
-        unique_filename: true,
-        access_mode: "public", // Make the raw resource publicly accessible
-        type: "upload",
-      }
-    );
+    const signedPdfUrl = cloudinary.v2.url(uploadResult.public_id, {
+      resource_type: "raw",
+      type: "upload",
+      sign_url: true,
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 10, // 10 minutes
+    });
 
     // ❌ Local file delete (important for Railway)
     fs.unlinkSync(req.file.path);
 
     // 📤 Send Cloudinary URL to worker
     await queue.add("file-upload", {
-      pdfUrl: uploadResult.secure_url,
+      pdfUrl: signedPdfUrl,
       originalname: req.file.originalname,
     });
 
@@ -167,13 +159,9 @@ app.get("/chat", async (req, res) => {
     const retriever = vectorStore.asRetriever({ k: 3 });
     const result = await retriever.invoke(userQuery);
 
-    const SYSTEM_PROMPT = `You are a helpful assistant that answers questions based ONLY on the following PDF context.
-
-If the answer is not in the context, say "I couldn’t find this information in the uploaded PDF."
-
-Context:
-${JSON.stringify(result, null, 2)}
-`;
+    const SYSTEM_PROMPT = `You are a helpful assistant that answers questions based ONLY on the following PDF context.If the answer is not in the context, say "I couldn’t find this information in the uploaded PDF."Context:
+    ${JSON.stringify(result, null, 2)}
+    `;
 
     const chatResult = await groqClient.chat.completions.create({
       model: "llama-3.3-70b-versatile",

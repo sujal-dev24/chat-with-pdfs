@@ -61,22 +61,29 @@ const worker = new Worker(
     console.log("🔗 Cloudinary PDF URL:", data.pdfUrl);
 
     async function downloadPdfFromCloudinary(pdfUrl) {
-      const res = await axios.get(pdfUrl, { responseType: 'arraybuffer' });
+      try {
+        const res = await axios.get(pdfUrl, {
+          responseType: "arraybuffer",
+          timeout: 15000,
+        });
 
-      if (res.status !== 200) {
-        console.error(`Axios failed with status ${res.status}: ${res.statusText}`);
-        throw new Error(`Failed to download PDF from Cloudinary: ${res.status} ${res.statusText}`);
+        if (res.status !== 200 || !res.data) {
+          throw new Error(`Cloudinary download failed: ${res.status}`);
+        }
+
+        const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+        fs.writeFileSync(localPath, Buffer.from(res.data));
+
+        console.log("📥 PDF downloaded:", localPath);
+        return localPath;
+      } catch (err) {
+        console.error(
+          "❌ Cloudinary download error:",
+          err.response?.status,
+          err.message
+        );
+        throw new Error("Failed to download PDF from Cloudinary");
       }
-
-      const buffer = Buffer.from(res.data);
-
-      const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
-
-      fs.writeFileSync(localPath, buffer);
-
-      console.log("📥 PDF downloaded at:", localPath);
-
-      return localPath;
     }
 
     const localPdfPath = await downloadPdfFromCloudinary(data.pdfUrl);
