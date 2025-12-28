@@ -51,14 +51,29 @@ const worker = new Worker(
   async (job) => {
     console.log("📄 New job received:", job.data);
 
-    async function downloadPdfFromCloudinary(publicId) {
-      const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
-
-      await cloudinary.v2.uploader.download(publicId, localPath, {
+    function getSignedPdfUrl(publicId) {
+      return cloudinary.v2.utils.private_download_url(publicId, "pdf", {
         resource_type: "raw",
+        expires_at: Math.floor(Date.now() / 1000) + 300, // 5 min expiry
+      });
+    }
+
+    async function downloadPdfFromCloudinary(publicId) {
+      const signedUrl = getSignedPdfUrl(publicId);
+      console.log("🔐 Signed Cloudinary URL:", signedUrl);
+
+      const res = await axios.get(signedUrl, {
+        responseType: "arraybuffer",
       });
 
-      console.log("📥 PDF downloaded via Cloudinary SDK:", localPath);
+      if (res.status !== 200) {
+        throw new Error("Failed to download PDF from Cloudinary");
+      }
+
+      const localPath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+      fs.writeFileSync(localPath, res.data);
+
+      console.log("📥 PDF downloaded at:", localPath);
       return localPath;
     }
 
