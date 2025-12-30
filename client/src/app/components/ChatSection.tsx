@@ -29,8 +29,6 @@ const ChatWindow = () => {
     setIsSending(true);
     setError(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/chat?message=${encodeURIComponent(userMessage.content)}`
