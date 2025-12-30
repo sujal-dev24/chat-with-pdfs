@@ -9,8 +9,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
 import fs from "fs";
-import cloudinary from "cloudinary";
-import axios from "axios";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const uploadDir = path.join(process.cwd(), "uploads");
 
@@ -19,16 +22,13 @@ if (!fs.existsSync(uploadDir)) {
   console.log("📁 uploads folder created");
 }
 
+import cloudinary from "cloudinary";
+
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const port = 8000;
@@ -103,26 +103,26 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    // ✅ RAW upload (VERY IMPORTANT)
     const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
       folder: "pdf-uploads",
-      resource_type: "auto",
+      resource_type: "raw", // 🔥 FIX
       use_filename: true,
       unique_filename: true,
-      access_mode: "public"
+      access_mode: "public",
     });
 
-    console.log("uplaod result: ", uploadResult);
+    console.log("UPLOAD RESULT:", uploadResult.secure_url);
 
-    fs.unlinkSync(req.file.path);
-
+    // ✅ ONLY send secure_url
     await queue.add("file-upload", {
-      pdfUrl: uploadResult.secure_url, // ✅ USE THIS
+      filePath: req.file.path,
       originalname: req.file.originalname,
     });
 
     return res.json({
       status: "queued",
-      publicId: uploadResult.public_id,
+      pdfUrl: uploadResult.secure_url,
     });
   } catch (err) {
     console.error("Upload error:", err);
