@@ -55,7 +55,7 @@ const queue = new Queue("file-upload-queue", {
 app.use(
   cors({
     origin: [
-      "https://chat-with-pdfs-sujalpanchals-projects.vercel.app",
+      "https://chat-with-pdfs-self.vercel.app",
       process.env.FRONTEND_URL,
     ],
     methods: ["GET", "POST", "OPTIONS"],
