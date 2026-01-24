@@ -52,20 +52,38 @@ const worker = new Worker(
   async (job) => {
     console.log("JOB DATA:", job.data);
 
-    const { filePath } = job.data;
+    // const { filePath } = job.data;
 
-    console.log("📄 Reading local PDF:", filePath);
+    // console.log("📄 Reading local PDF:", filePath);
 
-    if (!fs.existsSync(filePath)) {
-      throw new Error("PDF file not found at path");
-    }
+    // if (!fs.existsSync(filePath)) {
+    //   throw new Error("PDF file not found at path");
+    // }
 
-    const loader = new PDFLoader(filePath, { splitPages: true });
-    const rawDocs = await loader.load();
+    // const loader = new PDFLoader(filePath, { splitPages: true });
+    // const rawDocs = await loader.load();
 
-    // processing ke baad delete
+    // // processing ke baad delete
     // fs.unlinkSync(filePath);
     // console.log("🗑️ Local PDF deleted after processing");
+
+
+    const { pdfUrl } = job.data;
+
+console.log("📥 Downloading PDF from:", pdfUrl);
+
+const tempFilePath = path.join(os.tmpdir(), `pdf-${Date.now()}.pdf`);
+
+const response = await axios.get(pdfUrl, { responseType: "arraybuffer" });
+
+fs.writeFileSync(tempFilePath, response.data);
+
+const loader = new PDFLoader(tempFilePath, { splitPages: true });
+const rawDocs = await loader.load();
+
+// cleanup
+fs.unlinkSync(tempFilePath);
+console.log("🗑️ Temp PDF deleted after processing");
 
     const splitter = new CharacterTextSplitter({
       chunkSize: 500,
