@@ -51,29 +51,42 @@ const queue = new Queue("file-upload-queue", {
   },
 });
 
-// ---- CORS ----
+// CORS
 app.use(
   cors({
-    origin: [
-      "https://chat-with-pdfs-self.vercel.app",
-      process.env.FRONTEND_URL,
-    ],
+    origin: (origin, callback) => {
+      const allowed = [
+        "https://chat-with-pdfs-self.vercel.app",
+        process.env.FRONTEND_URL,
+      ];
+
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
   })
 );
 
-// ✅ SAFE preflight handler (Node 22 compatible)
+// Preflight
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", process.env.FRONTEND_URL);
+    res.header(
+      "Access-Control-Allow-Origin",
+      process.env.FRONTEND_URL || "https://chat-with-pdfs-self.vercel.app"
+    );
     res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     return res.sendStatus(200);
   }
   next();
 });
+
 
 app.use(express.json());
 
