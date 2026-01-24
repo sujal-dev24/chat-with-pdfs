@@ -91,15 +91,18 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // ---- Multer (file upload) ----
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
-  },
-});
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, uploadDir);
+//   },
+//   filename: function (req, file, cb) {
+//     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+//     cb(null, `${uniqueSuffix}-${file.originalname}`);
+//   },
+// });
+// const upload = multer({ storage });
+
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ---- Shared embedder (same as worker.js) ----
@@ -131,13 +134,32 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
     }
 
     // ✅ RAW upload (VERY IMPORTANT)
-    const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
+    // const uploadResult = await cloudinary.v2.uploader.upload(req.file.path, {
+    //   folder: "pdf-uploads",
+    //   resource_type: "raw", // 🔥 FIX
+    //   use_filename: true,
+    //   unique_filename: true,
+    //   access_mode: "public",
+    // });
+
+    const uploadResult = await new Promise((resolve, reject) => {
+    const stream = cloudinary.v2.uploader.upload_stream(
+    {
       folder: "pdf-uploads",
-      resource_type: "raw", // 🔥 FIX
+      resource_type: "raw",
       use_filename: true,
       unique_filename: true,
       access_mode: "public",
-    });
+    },
+    (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    }
+  );
+
+  stream.end(req.file.buffer);
+});
+
 
     console.log("UPLOAD RESULT:", uploadResult.secure_url);
 
