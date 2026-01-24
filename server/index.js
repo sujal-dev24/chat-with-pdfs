@@ -54,26 +54,49 @@ const queue = new Queue("file-upload-queue", {
 });
 
 // CORS
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       const allowed = [
+//         "https://chat-with-pdfs-self.vercel.app",
+//         process.env.FRONTEND_URL,
+//       ];
+
+//       if (!origin || allowed.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         console.log("❌ Blocked by CORS:", origin);
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     methods: ["GET", "POST", "OPTIONS"],
+//     allowedHeaders: ["Content-Type"],
+//     credentials: true,
+//   })
+// );
+
+
+const allowedOrigins = [
+  "https://chat-with-pdfs-self.vercel.app",
+  "https://chat-with-pdfs-sujalpanchals-projects.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      const allowed = [
-        "https://chat-with-pdfs-self.vercel.app",
-        process.env.FRONTEND_URL,
-      ];
-
-      if (!origin || allowed.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log("❌ Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // Postman / curl
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+      return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
   })
 );
+
 
 // Preflight
 app.use((req, res, next) => {
