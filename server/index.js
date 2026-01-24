@@ -5,22 +5,24 @@ import { Queue } from "bullmq";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+// import path from "path";
+// import { fileURLToPath } from "url";
 import { pipeline } from "@xenova/transformers";
-import fs from "fs";
+// import fs from "fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+// dotenv.config({ path: path.join(__dirname, ".env") });
 
-const uploadDir = path.join(process.cwd(), "uploads");
+// const uploadDir = path.join(process.cwd(), "uploads");
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log("📁 uploads folder created");
-}
+// if (!fs.existsSync(uploadDir)) {
+//   fs.mkdirSync(uploadDir, { recursive: true });
+//   console.log("📁 uploads folder created");
+// }
+
+dotenv.config();
 
 import cloudinary from "cloudinary";
 
@@ -234,6 +236,11 @@ app.get("/chat", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+// app.listen(port, () => {
+//   console.log(`🚀 server is started on PORT: ${port}`);
+// });
+
+app.listen(port, "0.0.0.0", () => {
   console.log(`🚀 server is started on PORT: ${port}`);
 });
+
