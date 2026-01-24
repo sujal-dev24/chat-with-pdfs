@@ -54,12 +54,17 @@ const queue = new Queue("file-upload-queue", {
 // ---- CORS ----
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: [
+      "chat-with-pdfs-sujalpanchals-projects.vercel.app",
+      process.env.FRONTEND_URL,
+    ],
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
   })
 );
+
+app.options("*", cors()); // 🔥 VERY IMPORTANT
 
 app.use(express.json());
 
