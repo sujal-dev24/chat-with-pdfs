@@ -52,22 +52,6 @@ const worker = new Worker(
   async (job) => {
     console.log("JOB DATA:", job.data);
 
-    // const { filePath } = job.data;
-
-    // console.log("📄 Reading local PDF:", filePath);
-
-    // if (!fs.existsSync(filePath)) {
-    //   throw new Error("PDF file not found at path");
-    // }
-
-    // const loader = new PDFLoader(filePath, { splitPages: true });
-    // const rawDocs = await loader.load();
-
-    // // processing ke baad delete
-    // fs.unlinkSync(filePath);
-    // console.log("🗑️ Local PDF deleted after processing");
-
-
     const { pdfUrl } = job.data;
 
 console.log("📥 Downloading PDF from:", pdfUrl);
