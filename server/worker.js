@@ -64,8 +64,8 @@ const worker = new Worker(
     const rawDocs = await loader.load();
 
     // processing ke baad delete
-    fs.unlinkSync(filePath);
-    console.log("🗑️ Local PDF deleted after processing");
+    // fs.unlinkSync(filePath);
+    // console.log("🗑️ Local PDF deleted after processing");
 
     const splitter = new CharacterTextSplitter({
       chunkSize: 500,
