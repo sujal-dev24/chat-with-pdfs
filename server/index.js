@@ -189,8 +189,13 @@ app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
     console.log("UPLOAD RESULT:", uploadResult.secure_url);
 
     // ✅ ONLY send secure_url
+    // await queue.add("file-upload", {
+    //   filePath: req.file.path,
+    //   originalname: req.file.originalname,
+    // });
+
     await queue.add("file-upload", {
-      filePath: req.file.path,
+      pdfUrl: uploadResult.secure_url,
       originalname: req.file.originalname,
     });
 
