@@ -31,7 +31,7 @@ cloudinary.v2.config({
 });
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 8080;
 
 // ---- ENV ----
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
